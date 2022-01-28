@@ -13,16 +13,8 @@ def main(myblob: func.InputStream):
     myblob_name = myblob.name.replace("data/", "") # Remove path from blob name. Not able to do in function.json
     print(myblob_name)
 
-
     try:
-        run_once = 0
-        while 1:
-            if run_once == 0 and myblob_name != "urls.txt": #should run once on trigger. Also avoids urls.txt upload trigger GenerateUrl
-                url = GenerateUrl(myblob_name)
-                url.upload_to_blob()
-                print("main while")
-                run_once = 1
-            else:
-                pass
+        url = GenerateUrl(myblob_name)
+        url.upload_to_blob()
     except Exception as e:
-        print(e)
+        print(f'Exception has occured: {e}')

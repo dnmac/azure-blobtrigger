@@ -13,7 +13,7 @@ class GenerateUrl:
     """ 
     Called when new blob is uploaded to data container.
     generates sas token & url.
-    Appends url to urls.txt file in same container.
+    Appends url to urls.txt file in different container.
     """
     def __init__(self,blob_name):
         self.blob_name = blob_name
@@ -34,7 +34,7 @@ class GenerateUrl:
         print("blob name:")
         print(self.blob_name)
         blob_sas = self.get_blob_sas(account_name,account_key, container_name, self.blob_name)
-        url = f'https://{account_name}.blob.core.windows.net/{container_name}/{self.blob_name}?{blob_sas}'
+        url = f'https://{account_name}.blob.core.windows.net/{container_name}/{self.blob_name}?{blob_sas}\n'
 
         return url
 
@@ -42,7 +42,22 @@ class GenerateUrl:
     def upload_to_blob(self):
         data = self.generate_url()
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        blob_client = blob_service_client.get_blob_client(container=container_name, blob=urls_file)
-        blob_client.append_block(data)
+        container_client = blob_service_client.get_container_client("urls")
+        
+        try:
+            blob_client = container_client.get_blob_client(urls_file)
+            if blob_client.exists():
+                blob_client.append_block(data)
+            else:
+                container_client.create_container()
+                # Create and write to text file
+                with open(urls_file, "w") as f:
+                    f.write(data)
+                # Upload content to the Page Blob
+                with open(urls_file, "rb") as f:
+                    blob_client.upload_blob(f, blob_type="AppendBlob")
 
-        return "urls file updated!"
+        except Exception as e:
+            print(f'Unexpected error: {e}')
+                
+        return
